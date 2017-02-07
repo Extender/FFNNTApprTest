@@ -1,13 +1,13 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-
 #include <QMainWindow>
+#include <QMessageBox>
 #include "threadex.h"
-#include "../FeedforwardNeuralNetwork/ffnnt.h"
+#include "ffnnt.h"
 #include "graphicssceneex.h"
 
-#define DEFAULT_FUNCTION_INTERVAL 0.05
+#define DEFAULT_FUNCTION_INTERVAL 0.02
 #define DEFAULT_PIXMAP_WIDTH 800
 #define DEFAULT_PIXMAP_HEIGHT 600
 
@@ -22,6 +22,7 @@ public:
     Ui::MainWindow *ui;
 
     bool started;
+    bool interrupt;
     FFNNT *nnt;
     ThreadEx *learningThread;
     GraphicsSceneEx *scene;

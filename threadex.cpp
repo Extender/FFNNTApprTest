@@ -2,14 +2,21 @@
 
 void ThreadEx::run()
 {
-    srand(time(NULL));
+    interrupt=false;
+    srand(time(0));
     bool isSin=stricmp(functionToUse,"sin")==0;
     bool isCos=stricmp(functionToUse,"cos")==0;
     bool isAbs=stricmp(functionToUse,"abs")==0;
-    for(;;)
+    for(uint64_t cycleId=0;;cycleId++)
     {
-        if(isInterruptionRequested())
+        if(interrupt)
             break;
+
+        if(cycleId%1000==0)
+        {
+            QApplication::processEvents();
+            msleep(100);
+        }
 
         double inputValue=-M_PI+2.0*((double)rand()/(double)RAND_MAX)*M_PI+functionXOffset;
         double *inputArray=(double*)malloc(1*sizeof(double));

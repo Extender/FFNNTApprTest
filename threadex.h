@@ -2,7 +2,7 @@
 #define THREADEX_H
 
 #include <QThread>
-#include <QDebug>
+#include <QApplication>
 #include <math.h>
 
 #include "../FeedforwardNeuralNetwork/ffnnt.h"
@@ -15,6 +15,7 @@ public:
     FFNNT *associatedNNT;
     char *functionToUse;
     double functionXOffset;
+    bool interrupt;
 
     void run();
 

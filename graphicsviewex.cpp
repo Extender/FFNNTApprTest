@@ -1,6 +1,7 @@
 #include "graphicsviewex.h"
 
 GraphicsViewEx::GraphicsViewEx(QWidget *parent)
+    : QGraphicsView(parent)
 {
     setMouseTracking(true);
     setScene(new GraphicsSceneEx(this)); // We need to pass a parent!

@@ -16,17 +16,17 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     graphicssceneex.cpp \
     graphicsviewex.cpp \
-    ../FeedforwardNeuralNetwork/text.cpp \
-    ../FeedforwardNeuralNetwork/io.cpp \
-    ../FeedforwardNeuralNetwork/ffnnt.cpp \
+    text.cpp \
+    io.cpp \
+    ffnnt.cpp \
     threadex.cpp
 
 HEADERS  += mainwindow.h \
     graphicssceneex.h \
     graphicsviewex.h \
-    ../FeedforwardNeuralNetwork/text.h \
-    ../FeedforwardNeuralNetwork/io.h \
-    ../FeedforwardNeuralNetwork/ffnnt.h \
+    text.h \
+    io.h \
+    ffnnt.h \
     threadex.h
 
 FORMS    += mainwindow.ui

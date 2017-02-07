@@ -7,13 +7,13 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     started=false;
+    interrupt=false;
     ui->useSinFunctRadioBtn->setChecked(true);
-    ui->useLinearActFunctForOutputLayerBox->setChecked(true);
     connect(ui->startBtn,SIGNAL(clicked(bool)),this,SLOT(startBtnClicked()));
     connect(ui->clearBtn,SIGNAL(clicked(bool)),this,SLOT(clearBtnClicked()));
     nnt=0;
     learningThread=new ThreadEx();
-    learningThread->functionToUse="sin";
+    learningThread->functionToUse=strdup("sin");
     learningThread->functionXOffset=0.0;
     connect(learningThread,SIGNAL(feedback(double,double)),this,SLOT(feedbackReceived(double,double)));
     scene=new GraphicsSceneEx(this);
@@ -58,13 +58,15 @@ void MainWindow::startBtnClicked()
     if(started)
     {
         started=false;
-        learningThread->requestInterruption();
+        interrupt=true;
+        learningThread->interrupt=true;
         learningThread->wait();
         redrawPixmap();
         ui->learningCycleLbl->setText("Learning cycle: "+QString::number(learningCycle));
         ui->startBtn->setText("Start");
+        interrupt=false;
     }
-    else
+    else if(!interrupt)
     {
         redrawPixmap();
         uint32_t hiddenLayers=ui->hiddenLayerCountBox->value();
@@ -72,13 +74,11 @@ void MainWindow::startBtnClicked()
         uint32_t lastLayer=layerCount-1;
         uint32_t neuronsPerHiddenLayer=ui->neuronsPerHiddenLayerBox->value();
         uint32_t totalNeuronCount=hiddenLayers*neuronsPerHiddenLayer+2;
-        double basicBias=ui->basicBiasBox->value();
         double learningRate=ui->learningRateBox->value();
         double momentum=ui->momentumBox->value();
-        bool useLinearActivationFunctionForOutputLayer=ui->useLinearActFunctForOutputLayerBox->isChecked();
         char *functionToUse=strdup(ui->useSinFunctRadioBtn->isChecked()?"sin":(ui->useCosFunctRadioBtn->isChecked()?"cos":(ui->useAbsFunctRadioBtn->isChecked()?"abs":"floor")));
         double functionXOffset=ui->xOffsetBox->value();
-        if(nnt==0||learningThread->functionXOffset!=functionXOffset||(stricmp(learningThread->functionToUse,functionToUse)!=0||nnt->layerCount!=layerCount||nnt->totalNeuronCount!=totalNeuronCount||nnt->basicBias!=basicBias||nnt->useLinearActivationFunctionForOutputLayer!=useLinearActivationFunctionForOutputLayer))
+        if(nnt==0||learningThread->functionXOffset!=functionXOffset||(stricmp(learningThread->functionToUse,functionToUse)!=0||nnt->layerCount!=layerCount||nnt->totalNeuronCount!=totalNeuronCount))
         {
             if(nnt!=0)
             {
@@ -90,7 +90,7 @@ void MainWindow::startBtnClicked()
             uint32_t *layerNeuronCounts=(uint32_t*)malloc(layerCount*sizeof(uint32_t));
             for(uint32_t layer=0;layer<layerCount;layer++)
                 layerNeuronCounts[layer]=(layer==0||layer==lastLayer?1:neuronsPerHiddenLayer);
-            nnt=new FFNNT(layerCount,layerNeuronCounts,totalNeuronCount,basicBias,learningRate,momentum,useLinearActivationFunctionForOutputLayer);
+            nnt=new FFNNT(layerCount,layerNeuronCounts,totalNeuronCount,learningRate,momentum,false);
             learningThread->associatedNNT=nnt;
             learningThread->functionToUse=functionToUse;
             learningThread->functionXOffset=functionXOffset;
@@ -122,15 +122,15 @@ void MainWindow::clearBtnClicked()
 
 void MainWindow::feedbackReceived(double input, double output)
 {
+    if(!started||interrupt)
+        return;
     receivedFunctionValues[mapValueToIndex(input,learningThread->functionXOffset)]=output;
     ++learningCycle;
-    if(!started)
-        return;
-    if(learningCycle%1000==0)
+    if(learningCycle%2000==0)
         redrawPixmap();
     else
         redrawPixmap(input);
-    if(learningCycle%100==0)
+    if(learningCycle%500==0)
         ui->learningCycleLbl->setText("Learning cycle: approx. "+QString::number(learningCycle));
 }
 
@@ -168,7 +168,7 @@ void MainWindow::redrawPixmap()
         int32_t imageY=verticalCenter-y*0.5*(double)imageHeight; // Define "0.5*imageHeight" as deltaY=1.0
         if(imageY<0)
             imageY=0;
-        else if(imageY>imageHeight-1)
+        else if((uint32_t)imageY>imageHeight-1) // We already know imageY is greater than 0; just keep (uint32_t) here to remove the signed/unsigned mismatch warning
             imageY=imageHeight-1;
         if(i==0) // Or also: if function jumps?
             correctPath.moveTo(imageX,imageY);
@@ -185,7 +185,7 @@ void MainWindow::redrawPixmap()
         int32_t imageY=verticalCenter-y*0.5*(double)imageHeight; // Define "0.5*imageHeight" as deltaY=1.0
         if(imageY<0)
             imageY=0;
-        else if(imageY>imageHeight-1)
+        else if((uint32_t)imageY>imageHeight-1) // We already know imageY is greater than 0; just keep (uint32_t) here to remove the signed/unsigned mismatch warning
             imageY=imageHeight-1;
         if(i==0) // Or also: if function jumps?
             functionPath.moveTo(imageX,imageY);
@@ -209,7 +209,7 @@ void MainWindow::redrawPixmap(double atValue)
     int32_t imageY=verticalCenter-y*0.5*(double)imageHeight; // Define "0.5*imageHeight" as deltaY=1.0
     if(imageY<0)
         imageY=0;
-    else if(imageY>imageHeight-1)
+    else if((uint32_t)imageY>imageHeight-1) // We already know imageY is greater than 0; just keep (uint32_t) here to remove the signed/unsigned mismatch warning
         imageY=imageHeight-1;
     functionPath.setElementPositionAt(index,functionPath.elementAt(index).x,imageY);
     functionPathItem->setPath(functionPath);
